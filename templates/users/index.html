@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <title>My Django Template</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/css/bootstrap.min.css" rel="stylesheet"
+          integrity="sha384-KyZXEAg3QhqLMpG8r+8fhAXLRk2vvoC2f3B09zVXn8CA5QIVfZOJ3BCsw2P0p/We" crossorigin="anonymous">
+
+</head>
+<body>
+
+<div class="container">
+    <div class="row">
+        <div class="col-md-12" style="margin-top: 5%;margin-bottom: 5%">
+            <h1 style="text-align: center">Dynamic Input</h1>
+        </div>
+        <div id="csrf">
+    {% csrf_token %}
+</div>
+        <div class="col-md-6 offset-3">
+            {#            <form action="{% url 'post' %}">#}
+            {##}
+            {#                <div class="mb-3">#}
+            {##}
+            {#                    <label for="exampleFormControlInput1" class="form-label">Full Name</label>#}
+            {#                    <input type="text" class="form-control" name="name" id="exampleFormControlInput1">#}
+            {#                </div>#}
+            {#                <div class="mb-3">#}
+            {#                   <label for="exampleFormControlInput1" class="form-label">Email address</label>#}
+            {#                <input type="email" class="form-control" id="exampleFormControlInput2" placeholder="name@example.com">#}
+            {#                </div>#}
+            {##}
+            {#                 <div class="mb-3" >#}
+            {#                   <label for="exampleFormControlInput1" class="form-label">Location</label>#}
+            {#                <input type="number" class="form-control" id="numField">#}
+            {#                </div>#}
+            {#                <input class="btn btn-primary" type="submit" value="Submit">#}
+            {##}
+            {#            </form>#}
+            <div class="mb-3">
+                <label for="exampleFormControlInput1" class="form-label">how many field do you want?</label>
+                <input type="number" class="form-control" id="numFields" required>
+            </div>
+            <button class="btn btn-primary" onclick="generateInputs()">Add</button>
+
+
+            <div class="mb-3" style="margin-top: 5%">
+                <div id="dynamicFields"></div>
+
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.0/dist/js/bootstrap.bundle.min.js"
+        integrity="sha384-ka5LTY1s6sO23g+bhc4+ZA2Fh5l704Ez5T9FZ4Z+ma5o9oKASbk+lC2C5Vp8v6Mn"
+        crossorigin="anonymous"></script>
+
+
+<script>
+
+    function sendData() {
+    const data = getAllInputValues();
+
+    fetch('{% url "get_field" %}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': document.getElementById('csrf').querySelector('input').value  // Add this line to include the CSRF token in your request header
+
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        console.log('Success:', data);
+    })
+    .catch((error) => {
+        console.error('Error:', error);
+    });
+}
+
+    function getAllInputValues() {
+    const container = document.getElementById('dynamicFields');
+
+    const textInputs = container.querySelectorAll('input[type="text"], input[type="number"]');
+    const dropdowns = container.querySelectorAll('select');
+
+    // Prepare the data object
+    let data = {
+        names: [],
+        maxChars: [],
+        dataTypes: []
+    };
+
+    textInputs.forEach((input, index) => {
+        // Assuming the order is name, maxChar for each group
+        if (index % 2 === 0) {
+            data.names.push(input.value);
+        } else {
+            data.maxChars.push(input.value);
+        }
+    });
+
+    dropdowns.forEach(dropdown => {
+        data.dataTypes.push(dropdown.value);
+    });
+
+    console.log("Names:", data.names);
+    console.log("Max Characters:", data.maxChars);
+    console.log("Data Types:", data.dataTypes);
+    console.log("this is data "+data);
+
+
+    return data;
+}
+
+    function generateInputs() {
+        const num = document.getElementById('numFields').value;
+        const container = document.getElementById('dynamicFields');
+        container.innerHTML = ''; // Clear existing fields
+
+        for (let i = 0; i < num; i++) {
+            // Create input for name
+            const nameInput = document.createElement('input');
+            nameInput.placeholder = 'Input name';
+            nameInput.classList.add('form-control');
+            nameInput.style.marginBottom = '3%';
+            nameInput.type ='text';
+
+            // Create input for max characters
+            const maxCharInput = document.createElement('input');
+            maxCharInput.placeholder = 'Max characters';
+            maxCharInput.type = 'number';
+            maxCharInput.classList.add('form-control');
+            maxCharInput.style.marginTop = '3%';
+
+
+            // Create dropdown for data type
+            const dataTypeDropdown = document.createElement('select');
+            dataTypeDropdown.classList.add('form-control');
+
+            const option1 = document.createElement('option');
+            option1.value = 'CharField';
+            option1.textContent = 'CharField';
+            const option2 = document.createElement('option');
+            option2.value = 'IntegerField';
+            option2.textContent = 'IntegerField';
+
+            {#const option3 = document.createElement('option');#}
+            {#option3.value = 'DecimalField';#}
+            {#option3.textContent = 'DecimalField';#}
+
+
+            dataTypeDropdown.addEventListener('change', function() {
+            if (this.value === 'IntegerField') {
+                maxCharInput.style.display = 'none'; // Hide maxCharInput
+            } else {
+                maxCharInput.style.display = 'block'; // Show maxCharInput
+            }
+        });
+
+            dataTypeDropdown.appendChild(option1);
+            dataTypeDropdown.appendChild(option2);
+            {#dataTypeDropdown.appendChild(option3);#}
+
+            // Append all to the container
+            container.appendChild(nameInput);
+            container.appendChild(dataTypeDropdown);
+
+            container.appendChild(maxCharInput);
+            container.appendChild(document.createElement('br')); // Line break for readability
+        }
+        const submitButton = document.createElement('button');
+        submitButton.textContent = 'Submit';
+        submitButton.classList.add('btn', 'btn-primary');  // Add some Bootstrap classes for styling
+        submitButton.onclick = sendData;  // Set the function to be called on click
+
+        // Append the button to the container
+        container.appendChild(submitButton);
+
+
+    }
+</script>
+
+</body>
+</html>
